@@ -304,9 +304,59 @@ public static String blockException(String arg, BlockException e) {
         - 未配置fallbackXXX则直接抛出异常信息，配置了fallbackXXX方法则按方法进行处理并返回。
 
 
-# 四、与OpenFeign和Rabbion整合
+# 四、整合
+
+## 1、与OpenFeign和Rabbion整合
 
 - 与Hystrix和OpenFeign和Rabbion整合一致，具体参考Hystrix笔记。
+
+## 2、与Gateway整合
+
+- 参考官方文档：https://sentinelguard.io/zh-cn/docs/api-gateway-flow-control.html
+
+<img src="Sentinel.assets/image-20230412164038923.png" alt="image-20230412164038923" style="zoom: 50%;" />
+
+- 在Sentinel-1.6.0开始，只需要引入与网关适配的依赖即可实现快速整合。通过与网关适配，在Sentinel可视化界面中将有其专属的流控配置和API管理。
+    - 在网关服务下引入此依赖即可。
+
+```xml
+<dependency>
+    <groupId>com.alibaba.csp</groupId>
+    <artifactId>sentinel-spring-cloud-gateway-adapter</artifactId>
+</dependency>
+```
+
+- 网关统一错误返回配置：
+
+```yaml
+spring:
+  cloud:
+    sentinel:
+      scg:
+        fallback:
+          response-status: 400
+          content-type: application/json
+```
+
+- 也可以通过代码进行配置：
+
+```java
+@Configuration
+public class SentinelGatewayConfig() {
+    // Spring Gateway采用WebFlux编程，所以整合响应也需要使用WebFlux语法
+    public sentinelGatewayConfig() {
+        GatewayCallbackManager.setBlockHandler(new BlockRequestHandle() {
+            @Override
+            public Mono<ServerResponse> handleRequest(ServerWebExchange exchange, Throwable t) {
+                // 返回
+                String res = "返回数据";
+                Mono<ServerResponse> body = ServerResponse.ok().body(Mono.just(res), String.class);
+                return body;
+            }
+        });
+    }
+}
+```
 
 
 # 五、规则持久化
